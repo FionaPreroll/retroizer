@@ -18,6 +18,7 @@ import { AboutDialog } from "./ui/about.ts";
 import { byId } from "./ui/dom.ts";
 import { History } from "./ui/history.ts";
 import { PaletteView } from "./ui/palette-view.ts";
+import { PreviewFab } from "./ui/preview-fab.ts";
 import { StatusDisplay } from "./ui/status.ts";
 import { bindThemePicker, preferences } from "./ui/theme.ts";
 
@@ -42,6 +43,7 @@ const originalCanvas = byId("originalCanvas", HTMLCanvasElement);
 const bay = byId("canvas-container", HTMLDivElement);
 
 const status = new StatusDisplay();
+const previewFab = new PreviewFab(bay, canvas);
 const history = new History<ImageData>(10);
 const renderer = new Renderer();
 const about = new AboutDialog(BUILD_INFO, THIRD_PARTY);
@@ -181,6 +183,7 @@ function restore(imageData: ImageData): void {
         updateScale();
     }
     ctx.putImageData(imageData, 0, 0);
+    previewFab.refresh();
 }
 
 function drawImage(image: ImageBitmap): void {
@@ -188,6 +191,7 @@ function drawImage(image: ImageBitmap): void {
     canvas.height = image.height;
     ctx.drawImage(image, 0, 0);
     updateScale();
+    previewFab.refresh();
 }
 
 function drawOriginal(image: ImageBitmap): void {
@@ -394,6 +398,7 @@ async function render(operation: Operation): Promise<void> {
 
     setBusy(true);
     setView("retro");
+    previewFab.setState("busy");
     status.update("BUSY", LABELS[operation]);
     status.setProgress(0);
 
@@ -421,9 +426,11 @@ async function render(operation: Operation): Promise<void> {
         if (palette) paletteView.show(palette, `${palette.length} colours · k-means`);
         const seconds = ((performance.now() - started) / 1000).toFixed(2);
         status.update("READY", `Done in ${seconds}s`);
+        previewFab.setState("done");
     } catch (error) {
         console.error(`Error during ${operation}:`, error);
         status.update("ERROR", `${LABELS[operation]} failed`);
+        previewFab.setState("idle");
     } finally {
         setBusy(false);
     }
@@ -463,6 +470,12 @@ fileInput.addEventListener("change", () => {
 bindDropTarget(byId("dropZone", HTMLLabelElement));
 bindDropTarget(bay);
 
+onClick("loadButton", () => {
+    fileInput.click();
+});
+onClick("emptyLoadButton", () => {
+    fileInput.click();
+});
 onClick("pasteClipboard", pasteFromClipboard);
 onClick("importImage", importCatImage);
 onClick("resetButton", resetSettings);

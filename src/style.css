@@ -761,11 +761,22 @@ input {
 
 .bay__empty {
     display: none;
-    max-width: 32ch;
-    margin: 0;
-    color: var(--ink-muted);
+    max-width: 34ch;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    color: var(--ink-soft);
     font-size: 13px;
     text-align: center;
+}
+
+.bay__empty p {
+    margin: 0;
+}
+
+.bay__empty-hint {
+    color: var(--ink-muted);
+    font-size: 12px;
 }
 
 .bay[data-empty="true"] .bay__screen {
@@ -773,7 +784,105 @@ input {
 }
 
 .bay[data-empty="true"] .bay__empty {
+    display: flex;
+}
+
+/*** Source actions ***/
+
+.source__load {
+    display: none;
+}
+
+/*** Preview button (shown while the viewport is scrolled out of sight) ***/
+
+.preview-fab {
+    --dock: 0px;
+    position: fixed;
+    right: 16px;
+    bottom: calc(var(--dock) + 16px);
+    z-index: 2;
+    width: 64px;
+    height: 64px;
+    padding: 4px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--bay);
+    color: var(--ink);
+    cursor: pointer;
+    box-shadow:
+        0 0 0 1px var(--line-strong),
+        0 8px 24px rgb(0 0 0 / 0.6);
+    isolation: isolate;
+}
+
+.preview-fab[hidden] {
+    display: none;
+}
+
+.preview-fab__thumb {
     display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 8px;
+    image-rendering: pixelated;
+}
+
+.preview-fab__arrow {
+    position: absolute;
+    right: -6px;
+    top: -6px;
+    padding: 4px;
+    border-radius: 50%;
+    background: var(--key);
+    box-shadow: 0 0 0 1px var(--line-strong);
+    box-sizing: content-box;
+}
+
+/* Rendering: a ring of light runs around the thumbnail. */
+.preview-fab[data-state="busy"]::before {
+    content: "";
+    position: absolute;
+    inset: -3px;
+    z-index: -1;
+    border-radius: 14px;
+    background: conic-gradient(
+        from var(--fab-angle, 0deg),
+        var(--accent) 0 25%,
+        transparent 25% 100%
+    );
+    animation: fab-spin 1s linear infinite;
+}
+
+/* Just finished: a short glow so the eye finds the new result. */
+.preview-fab[data-state="done"] {
+    animation: fab-done 1.2s ease-out 2;
+}
+
+@property --fab-angle {
+    syntax: "<angle>";
+    inherits: false;
+    initial-value: 0deg;
+}
+
+@keyframes fab-spin {
+    to {
+        --fab-angle: 360deg;
+    }
+}
+
+@keyframes fab-done {
+    0% {
+        box-shadow:
+            0 0 0 2px var(--accent),
+            0 0 0 0 var(--accent-glow),
+            0 8px 24px rgb(0 0 0 / 0.6);
+    }
+    100% {
+        box-shadow:
+            0 0 0 1px var(--line-strong),
+            0 0 0 14px transparent,
+            0 8px 24px rgb(0 0 0 / 0.6);
+    }
 }
 
 /*** Palette ***/
@@ -988,12 +1097,65 @@ input {
         font-size: 10px;
     }
 
+    /*
+     * One column in workflow order: 01 Source, the viewport, 02 Parameters,
+     * 04 Output, 05 Palette (03 Process is docked at the bottom).
+     */
     .deck__main {
-        grid-template-columns: minmax(0, 1fr);
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 14px;
     }
 
+    .hide-narrow {
+        display: none;
+    }
+
+    .rack,
     .stage {
-        order: -1;
+        display: contents;
+    }
+
+    .panel--source {
+        order: 1;
+    }
+
+    .panel--viewport {
+        order: 2;
+    }
+
+    .panel--params {
+        order: 3;
+    }
+
+    .panel--output {
+        order: 4;
+    }
+
+    .panel--palette {
+        order: 5;
+    }
+
+    /* Touch screens rarely drag files in: three plain keys instead of the drop zone. */
+    .dropzone {
+        display: none;
+    }
+
+    .source__actions {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .source__load {
+        display: block;
+    }
+
+    .source__actions .key {
+        padding: 0 8px;
+    }
+
+    .preview-fab {
+        --dock: 136px;
     }
 
     .bay {
@@ -1040,31 +1202,6 @@ input {
 
     .panel--process .key--primary {
         min-height: 52px;
-    }
-
-    .rack {
-        display: grid;
-        grid-template-areas:
-            "source"
-            "params"
-            "output"
-            "process";
-    }
-
-    .panel--source {
-        grid-area: source;
-    }
-
-    .panel--params {
-        grid-area: params;
-    }
-
-    .panel--output {
-        grid-area: output;
-    }
-
-    .panel--process {
-        grid-area: process;
     }
 
     .swatches {

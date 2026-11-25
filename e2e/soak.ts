@@ -56,7 +56,13 @@ const problems: string[] = [];
 
 page.on("pageerror", (error) => problems.push(`page error: ${error.message}`));
 page.on("console", (message) => {
-    if (message.type() === "error") problems.push(`console error: ${message.text()}`);
+    // Failed requests are reported with their URL below.
+    if (message.type() === "error" && !message.text().startsWith("Failed to load resource")) {
+        problems.push(`console error: ${message.text()}`);
+    }
+});
+page.on("response", (response) => {
+    if (response.status() >= 400) problems.push(`HTTP ${response.status()}: ${response.url()}`);
 });
 
 async function heapAfterGc(): Promise<number> {

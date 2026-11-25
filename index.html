@@ -14,6 +14,7 @@
             content="Turn images into retro pixel art: palette reduction and pixelization, right in your browser."
         />
         <title>Retroizer</title>
+        <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
         <script>
             // Apply the saved theme before the first paint (see src/ui/theme.ts).
             try {
@@ -113,9 +114,14 @@
                             <span class="dropzone__hint">PNG, JPG, WebP, GIF</span>
                             <input type="file" id="fileInput" accept="image/*" class="sr-only" />
                         </label>
-                        <div class="row row--2">
+                        <div class="row row--2 source__actions">
+                            <button type="button" id="loadButton" class="key source__load">
+                                Load
+                            </button>
                             <button type="button" id="pasteClipboard" class="key">Paste</button>
-                            <button type="button" id="importImage" class="key">Sample image</button>
+                            <button type="button" id="importImage" class="key">
+                                Sample<span class="hide-narrow"> image</span>
+                            </button>
                         </div>
                     </section>
 
@@ -306,9 +312,15 @@
                                 <canvas id="canvas"></canvas>
                                 <canvas id="originalCanvas" aria-label="Original image"></canvas>
                             </div>
-                            <p class="bay__empty">
-                                No image loaded. Drop one here, paste it or try the sample image.
-                            </p>
+                            <div class="bay__empty">
+                                <p>No image loaded yet.</p>
+                                <button type="button" id="emptyLoadButton" class="key key--outline">
+                                    Load image
+                                </button>
+                                <p class="bay__empty-hint">
+                                    Or drop one here, paste it, or try the sample image.
+                                </p>
+                            </div>
                         </div>
                     </section>
 
@@ -370,6 +382,30 @@
                 </footer>
             </div>
         </dialog>
+
+        <button
+            type="button"
+            id="previewFab"
+            class="preview-fab"
+            data-state="idle"
+            aria-label="Show image"
+            hidden
+        >
+            <canvas id="previewThumb" class="preview-fab__thumb" width="112" height="112"></canvas>
+            <svg
+                class="preview-fab__arrow"
+                aria-hidden="true"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="square"
+            >
+                <path d="M12 20V5M5 12l7-7 7 7" />
+            </svg>
+        </button>
 
         <script type="module" src="./src/main.ts"></script>
     </body>
