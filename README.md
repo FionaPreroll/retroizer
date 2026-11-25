@@ -5,6 +5,29 @@ palette of _n_ colours (k-means), then pixelize it into blocks.
 
 Live: https://fionapreroll.github.io/retroizer/ (deployed from `main`).
 
+## Showcase
+
+[![Retroizer, Phosphor theme][phosphor]][phosphor]
+
+| Original                          | Amber, 8 colours               | Cyan, 32 colours            |
+| --------------------------------- | ------------------------------ | --------------------------- |
+| [![Original][original]][original] | [![Amber theme][amber]][amber] | [![Cyan theme][cyan]][cyan] |
+
+| Phone                                                                                                           | About                           |
+| --------------------------------------------------------------------------------------------------------------- | ------------------------------- |
+| [<img alt="Phone layout" src="https://fionapreroll.github.io/retroizer/showcase/phone.png" width="260">][phone] | [![About dialog][about]][about] |
+
+[phosphor]: https://fionapreroll.github.io/retroizer/showcase/desktop-phosphor.png
+[original]: https://fionapreroll.github.io/retroizer/showcase/desktop-original.png
+[amber]: https://fionapreroll.github.io/retroizer/showcase/desktop-amber.png
+[cyan]: https://fionapreroll.github.io/retroizer/showcase/desktop-cyan.png
+[phone]: https://fionapreroll.github.io/retroizer/showcase/phone.png
+[about]: https://fionapreroll.github.io/retroizer/showcase/about.png
+
+The screenshots are not in the repository: CI takes them of every build of
+`main` (`pnpm showcase`, see `e2e/showcase.ts`) and deploys them with the site,
+so they always show the current version. The demo landscape is drawn by code.
+
 ## Development
 
 Requires Node.js 24 (see `.nvmrc`) and pnpm (`corepack enable` picks the
@@ -59,7 +82,8 @@ GitHub Actions (`.github/workflows/`):
 
 - **CI** on every push and pull request: lint, format check, typecheck, unit
   tests with coverage, fuzz tests (5000 runs per property), soak test and
-  benchmark (results in the job summary). On `main`, a green run deploys
+  benchmark (results in the job summary). The build job then takes the
+  showcase screenshots into `dist/showcase/`; on `main`, a green run deploys
   `dist/` to GitHub Pages.
 - **Nightly**: long fuzz run (100 000 runs per property) and a 2000-operation
   soak test at 1920×1080.

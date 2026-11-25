@@ -87,6 +87,9 @@ jobs:
                   cache: pnpm
             - run: pnpm install --frozen-lockfile
             - run: pnpm build
+            # Screenshots go into dist/showcase/ and ship with Pages, never into git.
+            - run: pnpm exec playwright install --with-deps chromium
+            - run: node e2e/showcase.ts
             - uses: actions/upload-pages-artifact@v5
               with:
                   path: dist

@@ -29,6 +29,7 @@
         "test:fuzz": "vitest run test/fuzz --testTimeout=0",
         "soak": "vite build && node e2e/soak.ts",
         "bench": "vite build && node bench/bench.ts",
+        "showcase": "vite build && node e2e/showcase.ts",
         "check": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test"
     },
     "devDependencies": {
