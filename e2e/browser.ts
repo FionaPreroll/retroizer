@@ -16,17 +16,18 @@ export function launchBrowser(): Promise<Browser> {
 export async function installSyntheticImage(page: Page): Promise<void> {
     // The function is already plain JS at runtime (Node strips the types).
     await page.evaluate(`
-        window.drawSyntheticImage = (width, height) => {
+        window.drawSyntheticImage = async (width, height) => {
             const canvas = document.getElementById("canvas");
             canvas.width = width;
             canvas.height = height;
             (${drawSyntheticImage.toString()})(canvas.getContext("2d"), width, height);
+            await window.retroizer?.adoptCanvas?.();
         };
     `);
 }
 
 declare global {
     interface Window {
-        drawSyntheticImage?: (width: number, height: number) => void;
+        drawSyntheticImage?: (width: number, height: number) => Promise<void>;
     }
 }

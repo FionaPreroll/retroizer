@@ -62,7 +62,7 @@ async function measure(input: {
     const { width, height, colors, pixelSize, mode } = input;
     const page = window as unknown as {
         retroizer?: { render(operation: Mode): Promise<void> };
-        drawSyntheticImage(width: number, height: number): void;
+        drawSyntheticImage(width: number, height: number): Promise<void>;
         palettizeImage?: () => Promise<void>;
         pixelizeImage?: () => Promise<void>;
     };
@@ -71,7 +71,7 @@ async function measure(input: {
     if (!ctx) throw new Error("no 2D context");
     const progress = document.getElementById("renderProgress") as HTMLProgressElement;
 
-    page.drawSyntheticImage(width, height);
+    await page.drawSyntheticImage(width, height);
     const original = ctx.getImageData(0, 0, width, height).data;
     for (const [id, value] of [
         ["colors", colors],

@@ -14,6 +14,15 @@ export class History<T> {
         this.limit = limit;
     }
 
+    /** Number of undo steps currently stored. */
+    get size(): number {
+        return this.undoStack.length;
+    }
+
+    get capacity(): number {
+        return this.limit;
+    }
+
     get canUndo(): boolean {
         return this.undoStack.length > 0;
     }

@@ -42,7 +42,16 @@ Playwright needs a Chromium: `pnpm exec playwright install chromium` (or set
     - `pipeline.ts` – palettize / pixelize / retroize with progress reports.
 - `src/worker.ts` + `src/renderer.ts` – operations run in a Web Worker, so the
   page never freezes; falls back to the main thread if workers fail.
-- `src/ui/` – status display, palette panel, undo/redo history.
+- `src/ui/` – status display, palette panel, undo/redo history, theme
+  (Phosphor / Amber / Cyan, remembered in `localStorage`) and the About dialog.
+- `build/` – build-time metadata for the About dialog: commit, branch and CI
+  run (from the GitHub Actions environment), and the third-party list. The
+  full licence texts are emitted as `third-party-licenses.txt`.
+
+The UI ("Phosphor Deck") treats the app like a piece of hardware: LED, 24-cell
+LCD status line, segmented progress bar, keycaps and a CRT viewport. Fonts
+(Press Start 2P, IBM Plex Mono) are self-hosted; the app loads nothing from
+third parties except the optional sample photo.
 
 ## CI
 

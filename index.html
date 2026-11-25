@@ -4,99 +4,372 @@
  SPDX-License-Identifier: GPL-3.0-only
 -->
 
-<html lang="en">
+<html lang="en" data-theme="phosphor">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Image Retroizer v1</title>
+        <meta name="color-scheme" content="dark" />
+        <meta
+            name="description"
+            content="Turn images into retro pixel art: palette reduction and pixelization, right in your browser."
+        />
+        <title>Retroizer</title>
+        <script>
+            // Apply the saved theme before the first paint (see src/ui/theme.ts).
+            try {
+                const theme = localStorage.getItem("retroizer.theme");
+                if (theme === "phosphor" || theme === "amber" || theme === "cyan") {
+                    document.documentElement.dataset.theme = theme;
+                }
+            } catch {
+                /* storage unavailable: keep the default */
+            }
+        </script>
     </head>
     <body>
-        <h1>Image Retroizer v1</h1>
-        <!-- Status Display Component -->
-        <div id="statusDisplayContainer">
-            <div id="ledIndicator"></div>
-            <div id="displayWrap">
-                <div id="statusDisplay">
-                    <span id="statusText">READY</span>
+        <div class="deck">
+            <header class="deck__header">
+                <div class="brand">
+                    <h1 class="brand__name">RETROIZER</h1>
+                    <p class="brand__plate">Model RZ-2 · Palette &amp; pixel processor</p>
                 </div>
-                <div id="progressContainer">
-                    <progress id="renderProgress" value="0" max="100"></progress>
+
+                <section id="statusDisplayContainer" class="status" aria-label="Status">
+                    <div
+                        id="ledIndicator"
+                        class="status__led"
+                        data-state="READY"
+                        role="img"
+                        aria-label="Status READY"
+                    ></div>
+                    <div class="status__body">
+                        <div id="statusDisplay" class="status__lcd">
+                            <span id="statusText" class="status__text" aria-live="polite"
+                                >READY</span
+                            >
+                        </div>
+                        <div
+                            id="renderProgress"
+                            class="status__progress"
+                            role="progressbar"
+                            aria-label="Render progress"
+                            aria-valuemin="0"
+                            aria-valuemax="100"
+                            aria-valuenow="0"
+                        ></div>
+                    </div>
+                </section>
+
+                <div class="deck__tools">
+                    <fieldset class="theme-picker">
+                        <legend class="sr-only">Colour theme</legend>
+                        <label class="theme-picker__option" title="Phosphor">
+                            <input type="radio" name="theme" value="phosphor" />
+                            <span
+                                class="theme-picker__swatch theme-picker__swatch--phosphor"
+                            ></span>
+                            <span class="sr-only">Phosphor</span>
+                        </label>
+                        <label class="theme-picker__option" title="Amber">
+                            <input type="radio" name="theme" value="amber" />
+                            <span class="theme-picker__swatch theme-picker__swatch--amber"></span>
+                            <span class="sr-only">Amber</span>
+                        </label>
+                        <label class="theme-picker__option" title="Cyan">
+                            <input type="radio" name="theme" value="cyan" />
+                            <span class="theme-picker__swatch theme-picker__swatch--cyan"></span>
+                            <span class="sr-only">Cyan</span>
+                        </label>
+                    </fieldset>
+                    <button type="button" id="aboutButton" class="key key--small">About</button>
                 </div>
+            </header>
+
+            <div class="deck__main">
+                <aside class="rack" aria-label="Controls">
+                    <section class="panel panel--source">
+                        <div class="panel__head">
+                            <h2 class="panel__title">
+                                <span class="panel__number">01</span>Source
+                            </h2>
+                            <button type="button" id="resetToOriginal" class="link-button">
+                                Revert to original
+                            </button>
+                        </div>
+                        <label id="dropZone" class="dropzone">
+                            <svg
+                                aria-hidden="true"
+                                width="22"
+                                height="22"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.8"
+                                stroke-linecap="square"
+                            >
+                                <path d="M12 16V4M6 10l6-6 6 6M4 20h16" />
+                            </svg>
+                            <span class="dropzone__title">Drop an image or click to load</span>
+                            <span class="dropzone__hint">PNG, JPG, WebP, GIF</span>
+                            <input type="file" id="fileInput" accept="image/*" class="sr-only" />
+                        </label>
+                        <div class="row row--2">
+                            <button type="button" id="pasteClipboard" class="key">Paste</button>
+                            <button type="button" id="importImage" class="key">Sample image</button>
+                        </div>
+                    </section>
+
+                    <section class="panel panel--params">
+                        <div class="panel__head">
+                            <h2 class="panel__title">
+                                <span class="panel__number">02</span>Parameters
+                            </h2>
+                            <button type="button" id="resetButton" class="link-button">
+                                Reset
+                            </button>
+                        </div>
+
+                        <div class="param">
+                            <div class="param__head">
+                                <label for="pixelSize">Pixel size</label>
+                                <output id="pixelSizeInput" for="pixelSize" class="readout"
+                                    >04 PX</output
+                                >
+                            </div>
+                            <input
+                                type="range"
+                                id="pixelSize"
+                                class="range"
+                                min="1"
+                                max="20"
+                                value="4"
+                            />
+                            <div class="param__scale" aria-hidden="true">
+                                <span>1</span><span>20</span>
+                            </div>
+                        </div>
+
+                        <div class="param">
+                            <div class="param__head">
+                                <label for="colors">Colours</label>
+                                <output id="colorsInput" for="colors" class="readout">016</output>
+                            </div>
+                            <input
+                                type="range"
+                                id="colors"
+                                class="range"
+                                min="2"
+                                max="256"
+                                value="16"
+                            />
+                            <div class="param__scale" aria-hidden="true">
+                                <span>2</span><span>256</span>
+                            </div>
+                        </div>
+
+                        <div class="param">
+                            <div class="param__head">
+                                <label for="scale">Viewport zoom</label>
+                                <output id="scaleInput" for="scale" class="readout">1.0×</output>
+                            </div>
+                            <input
+                                type="range"
+                                id="scale"
+                                class="range"
+                                min="0.1"
+                                max="2"
+                                step="0.1"
+                                value="1"
+                            />
+                            <div class="param__scale" aria-hidden="true">
+                                <span>0.1×</span><span>2×</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="panel panel--process">
+                        <h2 class="panel__title"><span class="panel__number">03</span>Process</h2>
+                        <div class="row row--2">
+                            <button type="button" id="renderPalettizeButton" class="key">
+                                Palettize
+                            </button>
+                            <button type="button" id="renderPixelizeButton" class="key">
+                                Pixelize
+                            </button>
+                        </div>
+                        <button type="button" id="renderButton" class="key key--primary">
+                            Retroize
+                        </button>
+                    </section>
+
+                    <section class="panel panel--output">
+                        <h2 class="panel__title"><span class="panel__number">04</span>Output</h2>
+                        <button type="button" id="saveCanvas" class="key key--outline">
+                            Save PNG
+                        </button>
+                        <div class="row row--2">
+                            <button type="button" id="copyCanvas" class="key">Copy</button>
+                            <button type="button" id="copyOriginalImage" class="key">
+                                Copy original
+                            </button>
+                        </div>
+                        <div class="history">
+                            <button
+                                type="button"
+                                id="undoButton"
+                                class="key key--icon"
+                                aria-label="Undo"
+                            >
+                                <svg
+                                    aria-hidden="true"
+                                    width="18"
+                                    height="18"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="square"
+                                >
+                                    <path d="M9 14L4 9l5-5" />
+                                    <path d="M4 9h11a5 5 0 010 10h-3" />
+                                </svg>
+                            </button>
+                            <button
+                                type="button"
+                                id="redoButton"
+                                class="key key--icon"
+                                aria-label="Redo"
+                            >
+                                <svg
+                                    aria-hidden="true"
+                                    width="18"
+                                    height="18"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="square"
+                                >
+                                    <path d="M15 14l5-5-5-5" />
+                                    <path d="M20 9H9a5 5 0 000 10h3" />
+                                </svg>
+                            </button>
+                            <span id="historyInfo" class="history__info">History 0 / 10</span>
+                        </div>
+                    </section>
+                </aside>
+
+                <main class="stage">
+                    <section class="panel panel--viewport" aria-label="Viewport">
+                        <div class="viewport__bar">
+                            <p id="viewportInfo" class="viewport__info">
+                                <span>Viewport</span><span>No image</span>
+                            </p>
+                            <div class="viewport__toggles">
+                                <div class="segmented" role="group" aria-label="Compare">
+                                    <button
+                                        type="button"
+                                        id="showOriginal"
+                                        class="segmented__option"
+                                        aria-pressed="false"
+                                    >
+                                        Original
+                                    </button>
+                                    <button
+                                        type="button"
+                                        id="showRetro"
+                                        class="segmented__option"
+                                        aria-pressed="true"
+                                    >
+                                        Retro
+                                    </button>
+                                </div>
+                                <button
+                                    type="button"
+                                    id="scanlinesToggle"
+                                    class="toggle"
+                                    aria-pressed="true"
+                                >
+                                    <span class="toggle__dot" aria-hidden="true"></span>Scanlines
+                                </button>
+                            </div>
+                        </div>
+
+                        <div
+                            id="canvas-container"
+                            class="bay"
+                            data-empty="true"
+                            data-scanlines="true"
+                            data-view="retro"
+                        >
+                            <div class="bay__screen">
+                                <canvas id="canvas"></canvas>
+                                <canvas id="originalCanvas" aria-label="Original image"></canvas>
+                            </div>
+                            <p class="bay__empty">
+                                No image loaded. Drop one here, paste it or try the sample image.
+                            </p>
+                        </div>
+                    </section>
+
+                    <section
+                        id="colorPaletteContainer"
+                        class="panel panel--palette"
+                        aria-label="Palette"
+                    >
+                        <div id="paletteTitle" class="panel__head">
+                            <h2 class="panel__title">
+                                <span class="panel__number">05</span>Palette<span
+                                    id="paletteInfo"
+                                    class="panel__meta"
+                                    >NES preset</span
+                                >
+                            </h2>
+                            <div class="row">
+                                <button type="button" id="copyPaletteButton" class="key">
+                                    Copy HEX
+                                </button>
+                                <button type="button" id="exportPaletteButton" class="key">
+                                    Export .gpl
+                                </button>
+                            </div>
+                        </div>
+                        <ul id="colorPalette" class="swatches"></ul>
+                    </section>
+                </main>
             </div>
         </div>
 
-        <div id="controlsContainer">
-            <div id="fileControls">
-                <input type="file" id="fileInput" accept="image/*" title="Import from File" />
-                <button id="pasteClipboard" title="Paste from Clipboard">
-                    Paste from Clipboard
-                </button>
-                <button id="importImage" class="secondary-button" title="Import Cat Image">
-                    Import Cat Image
-                </button>
+        <dialog id="aboutDialog" class="about" aria-labelledby="aboutTitle">
+            <div class="about__inner">
+                <header class="about__header">
+                    <h2 id="aboutTitle" class="about__title">About Retroizer</h2>
+                    <button
+                        type="button"
+                        class="key key--icon about__close"
+                        data-close
+                        aria-label="Close"
+                    >
+                        <svg
+                            aria-hidden="true"
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="square"
+                        >
+                            <path d="M6 6l12 12M18 6L6 18" />
+                        </svg>
+                    </button>
+                </header>
+                <div id="aboutContent" class="about__content"></div>
+                <footer class="about__footer">
+                    <button type="button" class="key" data-close>Close</button>
+                </footer>
             </div>
-
-            <div id="adjustmentControls">
-                <div class="control-group">
-                    <label for="pixelSize">Pixel Size:</label>
-                    <input type="range" id="pixelSize" min="1" max="20" value="4" />
-                    <input type="number" id="pixelSizeInput" min="1" max="20" value="4" />
-                </div>
-
-                <div class="control-group">
-                    <label for="colors">Colors:</label>
-                    <input type="range" id="colors" min="2" max="256" value="16" />
-                    <input type="number" id="colorsInput" min="2" max="256" value="16" />
-                </div>
-
-                <div class="control-group">
-                    <label for="scale">Viewport Scale:</label>
-                    <input type="range" id="scale" min="0.1" max="2" step="0.1" value="1" />
-                    <input type="number" id="scaleInput" min="0.1" max="2" step="0.1" value="1" />
-                </div>
-            </div>
-
-            <div id="actionControls">
-                <button id="resetButton" title="Reset All Parameters">Reset Parameters</button>
-                <button id="resetToOriginal" title="Reset to Original Image">
-                    Reset to Original
-                </button>
-
-                <button
-                    id="copyOriginalImage"
-                    class="secondary-button"
-                    title="Copy Original Image to Clipboard"
-                >
-                    Copy Original Image
-                </button>
-                <button id="copyCanvas" title="Copy Canvas to Clipboard">Copy Canvas</button>
-                <button id="saveCanvas" class="important-button" title="Save Canvas as Image">
-                    Save to File
-                </button>
-
-                <button id="renderPalettizeButton" title="Palettize Image">Palettize</button>
-                <button id="renderPixelizeButton" title="Pixelize Image">Pixelize</button>
-                <button id="renderButton" class="important-button" title="Apply All Effects">
-                    Retroize
-                </button>
-
-                <button id="undoButton" title="Undo Last Action">Undo</button>
-                <button id="redoButton" title="Redo Last Action">Redo</button>
-            </div>
-        </div>
-
-        <!-- Color Palette Display -->
-        <div id="colorPaletteContainer">
-            <div id="paletteTitle">
-                <span>Palette (initialized)</span>
-                <button id="togglePaletteButton">Expand</button>
-            </div>
-            <div id="colorPalette" style="display: none"></div>
-        </div>
-
-        <div id="canvas-container">
-            <canvas id="canvas"></canvas>
-        </div>
+        </dialog>
 
         <script type="module" src="./src/main.ts"></script>
     </body>

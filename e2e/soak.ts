@@ -90,7 +90,7 @@ try {
                 const started = performance.now();
                 if (step === "undo") api.undo();
                 else if (step === "redo") api.redo();
-                else if (step === "reload") window.drawSyntheticImage?.(w, h);
+                else if (step === "reload") await window.drawSyntheticImage?.(w, h);
                 else {
                     api.setParam("colors", colors);
                     api.setParam("pixelSize", pixelSize);

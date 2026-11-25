@@ -3,44 +3,64 @@
  * SPDX-License-Identifier: GPL-3.0-only
  */
 
+import "@fontsource/ibm-plex-mono/latin-400.css";
+import "@fontsource/ibm-plex-mono/latin-500.css";
+import "@fontsource/ibm-plex-mono/latin-600.css";
+import "@fontsource/press-start-2p/latin-400.css";
 import "./style.css";
 
+import { BUILD_INFO, THIRD_PARTY } from "./build-info.ts";
+import { toGimpPalette, toHexList } from "./core/palette-format.ts";
 import { NES_PALETTE } from "./core/palettes.ts";
 import type { Operation, OperationParams } from "./core/types.ts";
 import { Renderer } from "./renderer.ts";
+import { AboutDialog } from "./ui/about.ts";
 import { byId } from "./ui/dom.ts";
 import { History } from "./ui/history.ts";
 import { PaletteView } from "./ui/palette-view.ts";
 import { StatusDisplay } from "./ui/status.ts";
+import { bindThemePicker, preferences } from "./ui/theme.ts";
 
 const CAT_IMAGE_URL =
     "https://images.unsplash.com/photo-1544376543-c3dd0266dc86?ixlib=rb-4.0.3&q=85&fm=jpg&crop=entropy&cs=srgb&dl=cassidy-james-blaede-TA22tc6YyMw-unsplash.jpg&w=640";
+const SCANLINES_STORAGE_KEY = "retroizer.scanlines";
 
 type ParamName = "pixelSize" | "colors" | "scale";
 const DEFAULTS: Record<ParamName, number> = { pixelSize: 4, colors: 16, scale: 1 };
+
+const READOUTS: Record<ParamName, (value: number) => string> = {
+    pixelSize: (value) => `${String(value).padStart(2, "0")} PX`,
+    colors: (value) => String(value).padStart(3, "0"),
+    scale: (value) => `${value.toFixed(1)}×`,
+};
 
 const canvas = byId("canvas", HTMLCanvasElement);
 const context = canvas.getContext("2d", { willReadFrequently: true });
 if (!context) throw new Error("Canvas 2D is not supported");
 const ctx: CanvasRenderingContext2D = context;
+const originalCanvas = byId("originalCanvas", HTMLCanvasElement);
+const bay = byId("canvas-container", HTMLDivElement);
 
 const status = new StatusDisplay();
-const paletteView = new PaletteView();
 const history = new History<ImageData>(10);
 const renderer = new Renderer();
+const about = new AboutDialog(BUILD_INFO, THIRD_PARTY);
+const paletteView = new PaletteView((hex) => {
+    void copyText(hex, `${hex} copied`);
+});
 
-const controls: Record<ParamName, { slider: HTMLInputElement; input: HTMLInputElement }> = {
+const controls: Record<ParamName, { slider: HTMLInputElement; readout: HTMLOutputElement }> = {
     pixelSize: {
         slider: byId("pixelSize", HTMLInputElement),
-        input: byId("pixelSizeInput", HTMLInputElement),
+        readout: byId("pixelSizeInput", HTMLOutputElement),
     },
     colors: {
         slider: byId("colors", HTMLInputElement),
-        input: byId("colorsInput", HTMLInputElement),
+        readout: byId("colorsInput", HTMLOutputElement),
     },
     scale: {
         slider: byId("scale", HTMLInputElement),
-        input: byId("scaleInput", HTMLInputElement),
+        readout: byId("scaleInput", HTMLOutputElement),
     },
 };
 
@@ -54,7 +74,15 @@ const busyButtons = [
     "resetToOriginal",
 ].map((id) => byId(id, HTMLButtonElement));
 
-/** The last loaded source image, for "Reset to Original" and "Copy Original Image". */
+const undoButton = byId("undoButton", HTMLButtonElement);
+const redoButton = byId("redoButton", HTMLButtonElement);
+const historyInfo = byId("historyInfo", HTMLSpanElement);
+const viewportInfo = byId("viewportInfo", HTMLParagraphElement);
+const showOriginalButton = byId("showOriginal", HTMLButtonElement);
+const showRetroButton = byId("showRetro", HTMLButtonElement);
+const scanlinesToggle = byId("scanlinesToggle", HTMLButtonElement);
+
+/** The last loaded source image, for "Revert to original", "Copy original" and the compare view. */
 let originalImage: ImageBitmap | null = null;
 let busy = false;
 
@@ -68,32 +96,75 @@ function readParam(name: ParamName): number {
     return Number.isFinite(clamped) ? clamped : DEFAULTS[name];
 }
 
+function updateReadout(name: ParamName): void {
+    controls[name].readout.value = READOUTS[name](readParam(name));
+}
+
 function setParam(name: ParamName, value: number): void {
     controls[name].slider.value = String(value);
-    controls[name].input.value = String(value);
+    updateReadout(name);
+    if (name === "scale") updateScale();
 }
 
 function bindParam(name: ParamName, onChange: () => void = () => undefined): void {
-    const { slider, input } = controls[name];
-    slider.addEventListener("input", () => {
-        input.value = slider.value;
+    controls[name].slider.addEventListener("input", () => {
+        updateReadout(name);
         onChange();
     });
-    input.addEventListener("input", () => {
-        slider.value = input.value;
-        onChange();
-    });
+    updateReadout(name);
 }
 
 function updateScale(): void {
     const scale = readParam("scale");
-    canvas.style.width = `${canvas.width * scale}px`;
-    canvas.style.height = `${canvas.height * scale}px`;
+    for (const target of [canvas, originalCanvas]) {
+        target.style.width = `${target.width * scale}px`;
+        target.style.height = `${target.height * scale}px`;
+    }
+    updateViewportInfo();
 }
 
 function resetSettings(): void {
     for (const name of Object.keys(DEFAULTS) as ParamName[]) setParam(name, DEFAULTS[name]);
-    updateScale();
+}
+
+// ---------------------------------------------------------------------------
+// Viewport
+
+function updateViewportInfo(): void {
+    const parts = originalImage
+        ? [
+              `${canvas.width} × ${canvas.height} px`,
+              `Zoom ${Math.round(readParam("scale") * 100)} %`,
+          ]
+        : ["No image"];
+    viewportInfo.replaceChildren(
+        ...["Viewport", ...parts].map((text) => {
+            const span = document.createElement("span");
+            span.textContent = text;
+            return span;
+        }),
+    );
+}
+
+function setView(view: "original" | "retro"): void {
+    const showOriginal = view === "original" && originalImage !== null;
+    bay.dataset["view"] = showOriginal ? "original" : "retro";
+    showOriginalButton.setAttribute("aria-pressed", String(showOriginal));
+    showRetroButton.setAttribute("aria-pressed", String(!showOriginal));
+}
+
+function setScanlines(on: boolean): void {
+    bay.dataset["scanlines"] = String(on);
+    scanlinesToggle.setAttribute("aria-pressed", String(on));
+    preferences.set(SCANLINES_STORAGE_KEY, on ? "on" : "off");
+}
+
+function updateHistoryInfo(): void {
+    historyInfo.textContent = `History ${history.size} / ${history.capacity}`;
+    if (!busy) {
+        undoButton.disabled = !history.canUndo;
+        redoButton.disabled = !history.canRedo;
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -119,12 +190,23 @@ function drawImage(image: ImageBitmap): void {
     updateScale();
 }
 
+function drawOriginal(image: ImageBitmap): void {
+    originalCanvas.width = image.width;
+    originalCanvas.height = image.height;
+    originalCanvas.getContext("2d")?.drawImage(image, 0, 0);
+}
+
 /** Show a new source image. A paste can be undone; other sources start a fresh history. */
 function loadImage(image: ImageBitmap, { undoable = false } = {}): void {
-    if (undoable) history.push(snapshot());
+    if (undoable && originalImage) history.push(snapshot());
     else history.clear();
     originalImage = image;
+    drawOriginal(image);
     drawImage(image);
+    bay.dataset["empty"] = "false";
+    showOriginalButton.disabled = false;
+    setView("retro");
+    updateHistoryInfo();
     status.update("READY", "Image loaded");
 }
 
@@ -135,9 +217,12 @@ function errorMessage(error: unknown): string {
 // ---------------------------------------------------------------------------
 // Image sources
 
-async function handleFileUpload(event: Event): Promise<void> {
-    const file = (event.target as HTMLInputElement).files?.[0];
+async function loadFile(file: File | undefined): Promise<void> {
     if (!file) return;
+    if (!file.type.startsWith("image/")) {
+        status.update("ERROR", "Not an image file");
+        return;
+    }
     try {
         status.update("BUSY", "LOADING");
         loadImage(await createImageBitmap(file));
@@ -184,7 +269,27 @@ function resetToOriginalImage(): void {
     }
     history.clear();
     drawImage(originalImage);
+    setView("retro");
+    updateHistoryInfo();
     status.update("READY", "Original restored");
+}
+
+/** Drag & drop onto the drop zone or the viewport. */
+function bindDropTarget(target: HTMLElement): void {
+    target.addEventListener("dragover", (event) => {
+        if (!event.dataTransfer?.types.includes("Files")) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "copy";
+        target.toggleAttribute("data-dragging", true);
+    });
+    target.addEventListener("dragleave", () => {
+        target.toggleAttribute("data-dragging", false);
+    });
+    target.addEventListener("drop", (event) => {
+        event.preventDefault();
+        target.toggleAttribute("data-dragging", false);
+        void loadFile(event.dataTransfer?.files[0]);
+    });
 }
 
 // ---------------------------------------------------------------------------
@@ -220,27 +325,48 @@ function copyToClipboard(source: HTMLCanvasElement, doneMessage: string): void {
         });
 }
 
+async function copyText(text: string, doneMessage: string): Promise<void> {
+    try {
+        await navigator.clipboard.writeText(text);
+        status.update("READY", doneMessage);
+    } catch (error) {
+        console.error("Error copying text:", error);
+        status.update("ERROR", "Failed to copy to clipboard.");
+    }
+}
+
 function copyOriginalImage(): void {
     if (!originalImage) {
         status.update("ERROR", "No original image");
         return;
     }
-    const copy = document.createElement("canvas");
-    copy.width = originalImage.width;
-    copy.height = originalImage.height;
-    copy.getContext("2d")?.drawImage(originalImage, 0, 0);
-    copyToClipboard(copy, "Original copied");
+    copyToClipboard(originalCanvas, "Original copied");
 }
 
-async function saveToFile(): Promise<void> {
-    const url = URL.createObjectURL(await toPngBlob(canvas));
+function download(blob: Blob, fileName: string): void {
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.download = "pixelated_image.png";
+    link.download = fileName;
     link.href = url;
     link.click();
     setTimeout(() => {
         URL.revokeObjectURL(url);
     }, 0);
+}
+
+async function saveToFile(): Promise<void> {
+    if (!originalImage) {
+        status.update("ERROR", "No image");
+        return;
+    }
+    download(await toPngBlob(canvas), "pixelated_image.png");
+}
+
+function exportPalette(): void {
+    const palette = paletteView.current;
+    const text = toGimpPalette(palette, `Retroizer ${palette.length} colours`);
+    download(new Blob([text], { type: "text/plain" }), "retroizer.gpl");
+    status.update("READY", "Palette exported");
 }
 
 // ---------------------------------------------------------------------------
@@ -249,6 +375,7 @@ async function saveToFile(): Promise<void> {
 function setBusy(value: boolean): void {
     busy = value;
     for (const button of busyButtons) button.disabled = value;
+    if (!value) updateHistoryInfo();
 }
 
 const LABELS: Record<Operation, string> = {
@@ -260,12 +387,13 @@ const LABELS: Record<Operation, string> = {
 /** Run an operation on the current canvas content. Resolves when the result is shown. */
 async function render(operation: Operation): Promise<void> {
     if (busy) return;
-    if (canvas.width === 0 || canvas.height === 0) {
+    if (canvas.width === 0 || canvas.height === 0 || bay.dataset["empty"] === "true") {
         status.update("ERROR", "No image");
         return;
     }
 
     setBusy(true);
+    setView("retro");
     status.update("BUSY", LABELS[operation]);
     status.setProgress(0);
 
@@ -273,10 +401,7 @@ async function render(operation: Operation): Promise<void> {
         colors: readParam("colors"),
         pixelSize: readParam("pixelSize"),
     };
-    if (operation !== "pixelize") {
-        paletteView.setExpanded(true);
-        paletteView.show([], "Palette (calculating...)");
-    }
+    if (operation !== "pixelize") paletteView.show([], "calculating...");
 
     const before = snapshot();
     const started = performance.now();
@@ -293,10 +418,7 @@ async function render(operation: Operation): Promise<void> {
 
         history.push(before);
         restore(imageData);
-        if (palette) {
-            paletteView.show(palette, `Palette (${palette.length} colors)`);
-            console.log("Final Color Palette:", palette);
-        }
+        if (palette) paletteView.show(palette, `${palette.length} colours · k-means`);
         const seconds = ((performance.now() - started) / 1000).toFixed(2);
         status.update("READY", `Done in ${seconds}s`);
     } catch (error) {
@@ -310,11 +432,13 @@ async function render(operation: Operation): Promise<void> {
 function undo(): void {
     const previous = history.undo(snapshot());
     if (previous) restore(previous);
+    updateHistoryInfo();
 }
 
 function redo(): void {
     const next = history.redo(snapshot());
     if (next) restore(next);
+    updateHistoryInfo();
 }
 
 // ---------------------------------------------------------------------------
@@ -330,9 +454,15 @@ bindParam("pixelSize");
 bindParam("colors");
 bindParam("scale", updateScale);
 
-byId("fileInput", HTMLInputElement).addEventListener("change", (event) => {
-    void handleFileUpload(event);
+const fileInput = byId("fileInput", HTMLInputElement);
+fileInput.addEventListener("change", () => {
+    void loadFile(fileInput.files?.[0]).finally(() => {
+        fileInput.value = ""; // allow loading the same file again
+    });
 });
+bindDropTarget(byId("dropZone", HTMLLabelElement));
+bindDropTarget(bay);
+
 onClick("pasteClipboard", pasteFromClipboard);
 onClick("importImage", importCatImage);
 onClick("resetButton", resetSettings);
@@ -347,9 +477,29 @@ onClick("renderPixelizeButton", () => render("pixelize"));
 onClick("renderButton", () => render("retroize"));
 onClick("undoButton", undo);
 onClick("redoButton", redo);
+onClick("showOriginal", () => {
+    setView("original");
+});
+onClick("showRetro", () => {
+    setView("retro");
+});
+onClick("scanlinesToggle", () => {
+    setScanlines(bay.dataset["scanlines"] !== "true");
+});
+onClick("copyPaletteButton", () => copyText(toHexList(paletteView.current), "Palette copied"));
+onClick("exportPaletteButton", exportPalette);
+onClick("aboutButton", () => {
+    about.open();
+});
 
-paletteView.show(NES_PALETTE, "Palette (initialized)");
+bindThemePicker(document.querySelectorAll<HTMLInputElement>('input[name="theme"]'));
+setScanlines(preferences.get(SCANLINES_STORAGE_KEY) !== "off");
+showOriginalButton.disabled = true;
+updateHistoryInfo();
+updateViewportInfo();
+paletteView.show(NES_PALETTE, "NES preset");
 status.update("READY");
+status.setProgress(0);
 
 /** Hook for the benchmark/soak scripts and for debugging in the console. */
 export interface RetroizerDebugApi {
@@ -358,6 +508,8 @@ export interface RetroizerDebugApi {
     readonly redo: () => void;
     readonly setParam: (name: ParamName, value: number) => void;
     readonly usesWorker: () => boolean;
+    /** Treat whatever is drawn on the canvas as a freshly loaded image. */
+    readonly adoptCanvas: () => Promise<void>;
 }
 
 declare global {
@@ -372,4 +524,7 @@ window.retroizer = {
     redo,
     setParam,
     usesWorker: () => renderer.usesWorker,
+    adoptCanvas: async () => {
+        loadImage(await createImageBitmap(canvas));
+    },
 };
