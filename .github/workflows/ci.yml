@@ -18,9 +18,9 @@ jobs:
         name: Lint & typecheck
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v5
-            - uses: pnpm/action-setup@v4
-            - uses: actions/setup-node@v5
+            - uses: actions/checkout@v7
+            - uses: pnpm/action-setup@v6
+            - uses: actions/setup-node@v7
               with:
                   node-version-file: .nvmrc
                   cache: pnpm
@@ -33,9 +33,9 @@ jobs:
         name: Unit tests
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v5
-            - uses: pnpm/action-setup@v4
-            - uses: actions/setup-node@v5
+            - uses: actions/checkout@v7
+            - uses: pnpm/action-setup@v6
+            - uses: actions/setup-node@v7
               with:
                   node-version-file: .nvmrc
                   cache: pnpm
@@ -48,9 +48,9 @@ jobs:
         env:
             FUZZ_RUNS: "5000"
         steps:
-            - uses: actions/checkout@v5
-            - uses: pnpm/action-setup@v4
-            - uses: actions/setup-node@v5
+            - uses: actions/checkout@v7
+            - uses: pnpm/action-setup@v6
+            - uses: actions/setup-node@v7
               with:
                   node-version-file: .nvmrc
                   cache: pnpm
@@ -62,9 +62,9 @@ jobs:
         name: Soak test & benchmark
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v5
-            - uses: pnpm/action-setup@v4
-            - uses: actions/setup-node@v5
+            - uses: actions/checkout@v7
+            - uses: pnpm/action-setup@v6
+            - uses: actions/setup-node@v7
               with:
                   node-version-file: .nvmrc
                   cache: pnpm
@@ -79,15 +79,15 @@ jobs:
         needs: [lint, test, fuzz, e2e]
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v5
-            - uses: pnpm/action-setup@v4
-            - uses: actions/setup-node@v5
+            - uses: actions/checkout@v7
+            - uses: pnpm/action-setup@v6
+            - uses: actions/setup-node@v7
               with:
                   node-version-file: .nvmrc
                   cache: pnpm
             - run: pnpm install --frozen-lockfile
             - run: pnpm build
-            - uses: actions/upload-pages-artifact@v4
+            - uses: actions/upload-pages-artifact@v5
               with:
                   path: dist
 
@@ -107,4 +107,4 @@ jobs:
             url: ${{ steps.deployment.outputs.page_url }}
         steps:
             - id: deployment
-              uses: actions/deploy-pages@v4
+              uses: actions/deploy-pages@v5
