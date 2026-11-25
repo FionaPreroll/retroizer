@@ -1,0 +1,379 @@
+/**
+ * Copyright Fiona <fipreroll+app@gmail.com>
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
+/* Retro Display */
+:root {
+    --primary-color: #00ff66;
+    --background-color: #121212;
+    --led-on-color: #00ff66;
+    --led-off-color: #004d26;
+    --display-font: 'Press Start 2P', monospace;
+    --display-font-size: 18px;
+    --display-width: 320px;
+    --display-height: 40px;
+    --border-color: #00ff66;
+    --progress-bar-height: 20px;
+    --progress-bar-background: #1a1a1a;
+    --progress-bar-fill: #00ff66;
+    --progress-bar-animation: scanlines 1s 0 linear; // 0=skip animation
+    --shadow-color: rgba(0, 255, 102, 0.5);
+}
+
+/* Slick Color Palette */
+:root {
+    --palette-gap: 8px;
+    --palette-item-size: 40px;
+    --palette-border-radius: 4px;
+    --palette-border-color: #ccc;
+    --palette-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    --palette-container-margin-top: 20px;
+    --palette-background-color: #f5f5f5;
+    --title-font-size: 16px;
+    --title-color: #333;
+}
+
+/*** Base Style ***/
+
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin: 20px;
+}
+
+h1 {
+    display: none;
+}
+
+#canvas-container {
+    margin-top: 10px;
+    overflow: hidden;
+    display: inline-block;
+}
+
+#canvas {
+    transition: transform 0.2s ease;
+}
+
+/* General Styling for Controls */
+#controlsContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 15px;
+    background-color: var(--palette-background-color);
+    border: 1px solid var(--palette-border-color);
+    border-radius: var(--palette-border-radius);
+    box-shadow: var(--palette-box-shadow);
+    margin: 20px auto;
+    max-width: 600px;
+}
+
+#fileControls, #adjustmentControls, #actionControls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+}
+
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    justify-content: space-between;
+    min-width: 150px;
+}
+
+#adjustmentControls label {
+    font-size: 14px;
+    font-weight: bold;
+    color: #333;
+}
+
+#fileInput, #pasteClipboard, #importImage,
+#pixelSize, #pixelSizeInput,
+#colors, #colorsInput,
+#scale, #scaleInput {
+    width: 100%;
+    max-width: 200px;
+}
+
+#fileInput, #pasteClipboard, #importImage {
+    flex: 1;
+}
+
+#resetButton, #resetToOriginal,
+#copyOriginalImage, #copyCanvas, #saveCanvas,
+#renderPalettizeButton, #renderPixelizeButton, #renderButton,
+#undoButton, #redoButton {
+    padding: 10px 15px;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: var(--palette-border-radius);
+    border: 1px solid var(--palette-border-color);
+    transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+#resetButton, #renderPalettizeButton, #renderPixelizeButton {
+    background-color: #f0f0f0;
+}
+
+#resetButton:hover, #renderPalettizeButton:hover, #renderPixelizeButton:hover {
+    background-color: #e0e0e0;
+}
+
+.secondary-button {
+    background-color: #d0d0d0;
+}
+
+.important-button {
+    background-color: #ffcc00;
+    font-weight: bold;
+}
+
+.important-button:hover {
+    background-color: #ffbb00;
+}
+
+.secondary-button:hover {
+    background-color: #c0c0c0;
+}
+
+/* Undo/Redo Buttons */
+#undoButton, #redoButton {
+    background-color: #f0f0f0;
+}
+
+#undoButton:hover, #redoButton:hover {
+    background-color: #e0e0e0;
+}
+
+/*** Retroizer Color Palette ***/
+/* Retroizer Color Palette */
+/* Container for the Color Palette and Title */
+#colorPaletteContainer {
+    margin-top: var(--palette-container-margin-top);
+    padding: 10px;
+    background-color: var(--palette-background-color);
+    border: 1px solid var(--palette-border-color);
+    border-radius: var(--palette-border-radius);
+    box-shadow: var(--palette-box-shadow);
+    transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+    overflow: hidden;
+    max-height: 40px; /* Initial height when collapsed */
+}
+
+/* Title within the Color Palette Container */
+#paletteTitle {
+    font-size: var(--title-font-size);
+    color: var(--title-color);
+    margin-bottom: 10px;
+    font-weight: bold;
+    text-align: center;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Container for the Color Swatches */
+#colorPalette {
+    display: flex;
+    gap: var(--palette-gap);
+    flex-wrap: wrap;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+/* Individual Color Swatches */
+.colorSwatch {
+    width: var(--palette-item-size);
+    height: var(--palette-item-size);
+    border-radius: var(--palette-border-radius);
+    border: 1px solid var(--palette-border-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Hover Effect for Color Swatches */
+.colorSwatch:hover {
+    transform: scale(1.1);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Toggle Button Styling */
+#togglePaletteButton {
+    padding: 2px 6px;
+    font-size: 12px;
+    border: 1px solid var(--palette-border-color);
+    background-color: #ccc;
+    border-radius: var(--palette-border-radius);
+    cursor: pointer;
+}
+
+/* Expanded State */
+#colorPaletteContainer.expanded {
+    max-height: 300px; /* Adjust to fit your needs */
+    padding: 10px 10px 20px 10px;
+}
+
+/* Scrollbar Customization for a More Polished Look */
+#colorPalette::-webkit-scrollbar {
+    width: 8px;
+}
+
+#colorPalette::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 4px;
+}
+
+#colorPalette::-webkit-scrollbar-track {
+    background-color: transparent;
+}
+
+/*** Retroizer Status Display Styles ***/
+
+/* Import Retro Font */
+/*@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+*/
+
+/* Container for the Entire Status Display */
+#statusDisplayContainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 20px;
+    background-color: var(--background-color);
+    box-shadow: 0 0 20px var(--shadow-color);
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    width: fit-content;
+    margin: 10px auto;
+}
+
+/* LED Indicator Styling */
+#ledIndicator {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: var(--led-on-color);
+    box-shadow: 0 0 10px var(--led-on-color), 0 0 20px var(--led-on-color);
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Display Wrapper */
+#displayWrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: var(--display-width);
+}
+
+/* Status Display Styling */
+#statusDisplay {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: var(--display-height);
+    background-color: var(--background-color);
+    border: 2px inset var(--border-color);
+    box-shadow: inset 0 0 10px var(--shadow-color);
+    margin-bottom: 10px;
+}
+
+#statusText {
+    font-family: var(--display-font);
+    font-size: var(--display-font-size);
+    color: var(--primary-color);
+    text-shadow: 0 0 5px var(--primary-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0 10px;
+}
+
+/* Progress Container Styling */
+#progressContainer {
+    width: 100%;
+    height: var(--progress-bar-height);
+    background-color: var(--progress-bar-background);
+    border: 2px solid var(--border-color);
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    /* Always visible but with transparency when no progress */
+    opacity: 0.8;
+}
+
+/* Progress Bar Styling */
+#renderProgress {
+    width: 100%;
+    height: 100%;
+    appearance: none;
+    -webkit-appearance: none;
+    background-color: transparent;
+    position: relative;
+    z-index: 1;
+}
+
+/* Progress Bar Track */
+#renderProgress::-webkit-progress-bar {
+    background-color: transparent;
+}
+
+/* Progress Bar Value */
+#renderProgress::-webkit-progress-value {
+    background-color: var(--progress-bar-fill);
+    box-shadow: 0 0 10px var(--progress-bar-fill);
+    transition: width 0.3s ease;
+}
+
+/* Fallback for Firefox */
+#renderProgress::-moz-progress-bar {
+    background-color: var(--progress-bar-fill);
+    box-shadow: 0 0 10px var(--progress-bar-fill);
+}
+
+/* Decorative Background for Progress Container */
+#progressContainer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -50%;
+    width: 200%;
+    height: 100%;
+    background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 10px,
+        rgba(0, 255, 102, 0.1) 10px,
+        rgba(0, 255, 102, 0.1) 20px
+    );
+    z-index: 0;
+    animation: var(--progress-bar-animation);
+    pointer-events: none;
+}
+
+/* Scanline Animation for Retro Effect */
+@keyframes scanlines {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(20px);
+    }
+}
+
+/* LED Off State Modifier Class */
+.led-off {
+    background-color: var(--led-off-color);
+    box-shadow: none;
+}
+
