@@ -1,0 +1,48 @@
+name: Nightly
+
+on:
+    schedule:
+        - cron: "17 3 * * *"
+    workflow_dispatch:
+        inputs:
+            fuzz_runs:
+                description: Runs per fuzz property
+                default: "100000"
+            soak_iterations:
+                description: Soak test operations
+                default: "2000"
+
+permissions:
+    contents: read
+
+jobs:
+    fuzz:
+        name: Long fuzz run
+        runs-on: ubuntu-latest
+        timeout-minutes: 60
+        env:
+            FUZZ_RUNS: ${{ inputs.fuzz_runs || '100000' }}
+        steps:
+            - uses: actions/checkout@v5
+            - uses: pnpm/action-setup@v4
+            - uses: actions/setup-node@v5
+              with:
+                  node-version-file: .nvmrc
+                  cache: pnpm
+            - run: pnpm install --frozen-lockfile
+            - run: pnpm test:fuzz
+
+    soak:
+        name: Long soak test
+        runs-on: ubuntu-latest
+        timeout-minutes: 60
+        steps:
+            - uses: actions/checkout@v5
+            - uses: pnpm/action-setup@v4
+            - uses: actions/setup-node@v5
+              with:
+                  node-version-file: .nvmrc
+                  cache: pnpm
+            - run: pnpm install --frozen-lockfile
+            - run: pnpm exec playwright install --with-deps chromium
+            - run: pnpm soak --iterations ${{ inputs.soak_iterations || '2000' }} --size 1920x1080

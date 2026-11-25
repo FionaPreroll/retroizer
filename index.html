@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <!--
  Copyright Fiona <fipreroll+app@gmail.com>
  SPDX-License-Identifier: GPL-3.0-only
@@ -6,10 +6,9 @@
 
 <html lang="en">
     <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Image Retroizer v1</title>
-        <link rel="stylesheet" href="style.css">
     </head>
     <body>
         <h1>Image Retroizer v1</h1>
@@ -28,42 +27,58 @@
 
         <div id="controlsContainer">
             <div id="fileControls">
-                <input type="file" id="fileInput" accept="image/*" title="Import from File">
-                <button id="pasteClipboard" title="Paste from Clipboard">Paste from Clipboard</button>
-                <button id="importImage" class="secondary-button" title="Import Cat Image">Import Cat Image</button>
+                <input type="file" id="fileInput" accept="image/*" title="Import from File" />
+                <button id="pasteClipboard" title="Paste from Clipboard">
+                    Paste from Clipboard
+                </button>
+                <button id="importImage" class="secondary-button" title="Import Cat Image">
+                    Import Cat Image
+                </button>
             </div>
 
             <div id="adjustmentControls">
                 <div class="control-group">
                     <label for="pixelSize">Pixel Size:</label>
-                    <input type="range" id="pixelSize" min="1" max="20" value="4">
-                    <input type="number" id="pixelSizeInput" min="1" max="20" value="4">
+                    <input type="range" id="pixelSize" min="1" max="20" value="4" />
+                    <input type="number" id="pixelSizeInput" min="1" max="20" value="4" />
                 </div>
 
                 <div class="control-group">
                     <label for="colors">Colors:</label>
-                    <input type="range" id="colors" min="2" max="256" value="16">
-                    <input type="number" id="colorsInput" min="2" max="256" value="16">
+                    <input type="range" id="colors" min="2" max="256" value="16" />
+                    <input type="number" id="colorsInput" min="2" max="256" value="16" />
                 </div>
 
                 <div class="control-group">
                     <label for="scale">Viewport Scale:</label>
-                    <input type="range" id="scale" min="0.1" max="2" step="0.1" value="1">
-                    <input type="number" id="scaleInput" min="0.1" max="2" step="0.1" value="1">
+                    <input type="range" id="scale" min="0.1" max="2" step="0.1" value="1" />
+                    <input type="number" id="scaleInput" min="0.1" max="2" step="0.1" value="1" />
                 </div>
             </div>
 
             <div id="actionControls">
                 <button id="resetButton" title="Reset All Parameters">Reset Parameters</button>
-                <button id="resetToOriginal" title="Reset to Original Image">Reset to Original</button>
+                <button id="resetToOriginal" title="Reset to Original Image">
+                    Reset to Original
+                </button>
 
-                <button id="copyOriginalImage" class="secondary-button" title="Copy Original Image to Clipboard">Copy Original Image</button>
+                <button
+                    id="copyOriginalImage"
+                    class="secondary-button"
+                    title="Copy Original Image to Clipboard"
+                >
+                    Copy Original Image
+                </button>
                 <button id="copyCanvas" title="Copy Canvas to Clipboard">Copy Canvas</button>
-                <button id="saveCanvas" class="important-button" title="Save Canvas as Image">Save to File</button>
+                <button id="saveCanvas" class="important-button" title="Save Canvas as Image">
+                    Save to File
+                </button>
 
                 <button id="renderPalettizeButton" title="Palettize Image">Palettize</button>
                 <button id="renderPixelizeButton" title="Pixelize Image">Pixelize</button>
-                <button id="renderButton" class="important-button" title="Apply All Effects">Retroize</button>
+                <button id="renderButton" class="important-button" title="Apply All Effects">
+                    Retroize
+                </button>
 
                 <button id="undoButton" title="Undo Last Action">Undo</button>
                 <button id="redoButton" title="Redo Last Action">Redo</button>
@@ -76,14 +91,13 @@
                 <span>Palette (initialized)</span>
                 <button id="togglePaletteButton">Expand</button>
             </div>
-            <div id="colorPalette" style="display: none;"></div>
+            <div id="colorPalette" style="display: none"></div>
         </div>
 
         <div id="canvas-container">
             <canvas id="canvas"></canvas>
         </div>
 
-        <script src="retroizer.js"></script>
+        <script type="module" src="./src/main.ts"></script>
     </body>
 </html>
-
