@@ -41,6 +41,16 @@ jobs:
                   cache: pnpm
             - run: pnpm install --frozen-lockfile
             - run: pnpm test:coverage
+            # Needs the CODECOV_TOKEN repository secret. Without it (e.g. Dependabot PRs) the
+            # upload fails quietly and never blocks build or deploy.
+            - name: Upload coverage to Codecov
+              uses: codecov/codecov-action@v7
+              with:
+                  token: ${{ secrets.CODECOV_TOKEN }}
+                  files: coverage/lcov.info
+                  disable_search: true
+                  flags: unit
+                  fail_ci_if_error: false
 
     fuzz:
         name: Fuzz tests

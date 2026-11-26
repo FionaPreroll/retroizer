@@ -1,5 +1,8 @@
 # Image Retroizer
 
+[![CI](https://github.com/FionaPreroll/retroizer/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/FionaPreroll/retroizer/actions/workflows/ci.yml)
+[![Coverage](https://codecov.io/gh/FionaPreroll/retroizer/graph/badge.svg?branch=main)](https://codecov.io/gh/FionaPreroll/retroizer)
+
 Turns images into retro pixel art in the browser: reduce the image to a
 palette of _n_ colours (k-means), then pixelize it into blocks.
 
@@ -82,7 +85,9 @@ GitHub Actions (`.github/workflows/`):
 
 - **CI** on every push and pull request: lint, format check, typecheck, unit
   tests with coverage, fuzz tests (5000 runs per property), soak test and
-  benchmark (results in the job summary). The build job then takes the
+  benchmark (results in the job summary). The unit test coverage goes to
+  [Codecov](https://codecov.io/gh/FionaPreroll/retroizer) (needs the
+  `CODECOV_TOKEN` repository secret; a failed upload never blocks the deploy). The build job then takes the
   showcase screenshots into `dist/showcase/`; on `main`, a green run deploys
   `dist/` to GitHub Pages.
 - **Nightly**: long fuzz run (100 000 runs per property) and a 2000-operation

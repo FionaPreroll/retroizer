@@ -32,6 +32,8 @@ export default defineConfig({
         include: ["test/**/*.test.ts"],
         coverage: {
             include: ["src/core/**", "src/ui/history.ts"],
+            // lcov is what CI uploads to Codecov; text for the log, html for local browsing.
+            reporter: ["text", "html", "lcov"],
         },
     },
 });

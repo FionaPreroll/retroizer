@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- CI uploads the unit test coverage (lcov) to Codecov; coverage and CI badges in the README.
+
 ## [2.0.0] - 2026-11-25
 
 Complete rewrite in TypeScript. Retroizing is about 150 times faster and no longer freezes the
