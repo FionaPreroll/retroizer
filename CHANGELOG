@@ -1,0 +1,107 @@
+Date:   Wed Aug 28 09:15:02 2024 +0200
+
+    addlicense target
+
+Date:   Wed Aug 28 02:10:49 2024 +0200
+
+    ui rework fixes
+
+Date:   Wed Aug 28 01:58:43 2024 +0200
+
+    fancy palette
+
+Date:   Wed Aug 28 01:25:48 2024 +0200
+
+    palette++
+
+Date:   Wed Aug 28 01:18:38 2024 +0200
+
+    stylez
+
+Date:   Wed Aug 28 00:32:00 2024 +0200
+
+    live palette preview!
+
+Date:   Wed Aug 28 00:17:00 2024 +0200
+
+    apply palette immediately instead of coupled to the pixelize step
+
+Date:   Wed Aug 28 00:01:04 2024 +0200
+
+    add color palette display
+
+Date:   Tue Aug 27 23:50:12 2024 +0200
+
+    fix progress proportions
+
+Date:   Tue Aug 27 23:46:02 2024 +0200
+
+    remove exports
+
+Date:   Tue Aug 27 23:45:31 2024 +0200
+
+    remove file split
+
+Date:   Tue Aug 27 23:43:50 2024 +0200
+
+    reorder modules
+
+Date:   Tue Aug 27 23:42:23 2024 +0200
+
+    handle error gracefully
+
+Date:   Tue Aug 27 23:38:59 2024 +0200
+
+    decouple the files
+
+Date:   Tue Aug 27 23:24:04 2024 +0200
+
+    fix imports
+
+Date:   Tue Aug 27 23:12:45 2024 +0200
+
+    break it all by making it a module
+
+Date:   Tue Aug 27 22:54:50 2024 +0200
+
+    add eslint setting and apply fixes
+
+Date:   Tue Aug 27 22:41:47 2024 +0200
+
+    add makefiles to trigger eslint
+
+Date:   Tue Aug 27 22:14:11 2024 +0200
+
+    style fixes
+
+Date:   Tue Aug 27 22:03:12 2024 +0200
+
+    parallelize kmeans
+
+Date:   Tue Aug 27 21:30:24 2024 +0200
+
+    rendering trigger rework
+
+Date:   Tue Aug 27 20:58:33 2024 +0200
+
+    add status msg logic
+
+Date:   Tue Aug 27 19:49:11 2024 +0200
+
+    status indicators, refactor css
+
+Date:   Tue Aug 27 19:12:22 2024 +0200
+
+    refactor js, add feedback display
+
+Date:   Tue Aug 27 19:03:48 2024 +0200
+
+    trying to fix color palette
+
+Date:   Tue Aug 27 18:53:45 2024 +0200
+
+    add cat
+
+Date:   Tue Aug 27 18:32:45 2024 +0200
+
+    retroizer v0.1
